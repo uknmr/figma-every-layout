@@ -1,3 +1,8 @@
+const DEFAULT_FONT_SIZE = 16
+const DEFAULT_GAP_STACK = 1
+const DEFAULT_GAP_CLUSTER = 0.5
+const SPACING_TOKENS = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 8]
+
 export const currentPageChanged = () =>
   figma.currentPage.on('nodechange', ({ nodeChanges }) =>
     nodeChanges.forEach(({ type, node, ...rest }) => {
@@ -14,18 +19,11 @@ export const currentPageChanged = () =>
     }),
   )
 
-const DEFAULT_GAP_STACK = '16'
-const DEFAULT_GAP_CLUSTER = '8'
-
 const makeAutoLayout = (
   node: FrameNode,
   component: 'Stack' | 'Cluster',
-  gapStr: string = component === 'Stack'
-    ? DEFAULT_GAP_STACK
-    : DEFAULT_GAP_CLUSTER,
+  gapStr: string,
 ) => {
-  const gap = parseGap(gapStr)
-
   switch (component) {
     case 'Stack':
       node.layoutMode = 'VERTICAL'
@@ -39,16 +37,24 @@ const makeAutoLayout = (
 
   node.counterAxisSizingMode = 'AUTO'
 
+  const gap = gapStr
+    ? parseGap(gapStr)
+    : component === 'Stack'
+    ? DEFAULT_GAP_STACK
+    : DEFAULT_GAP_CLUSTER
+
   if (gap === 'auto') {
     node.primaryAxisAlignItems = 'SPACE_BETWEEN'
-  } else {
-    node.primaryAxisAlignItems = 'MIN'
-    node.primaryAxisSizingMode = 'AUTO'
-
-    if (!isNaN(gap)) {
-      node.itemSpacing = gap
-    }
+    return
   }
+
+  node.primaryAxisAlignItems = 'MIN'
+  node.primaryAxisSizingMode = 'AUTO'
+
+  if (isNaN(gap)) return
+  if (!SPACING_TOKENS.includes(gap)) return
+
+  node.itemSpacing = DEFAULT_FONT_SIZE * gap
 }
 
 const parseGap = (arg: string) => {
@@ -56,5 +62,5 @@ const parseGap = (arg: string) => {
     return arg
   }
 
-  return parseInt(arg, 10)
+  return parseFloat(arg)
 }
